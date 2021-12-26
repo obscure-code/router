@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ObscureCoder\Exceptions;
+namespace ObscureCode\Exceptions;
 
 use RuntimeException;
 

@@ -1,5 +1,5 @@
 {
-    "name": "obscure-coder/router",
+    "name": "obscure-code/router",
     "description": "PHP router",
     "type": "library",
     "license": "proprietary",
@@ -9,7 +9,12 @@
     },
     "autoload": {
         "psr-4": {
-            "ObscureCoder\\": "src/"
+            "ObscureCode\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ObscureCode\\Tests\\": "tests"
         }
     },
     "require-dev": {

@@ -2,30 +2,54 @@
 
 declare(strict_types=1);
 
-namespace ObscureCoder;
+namespace ObscureCode;
 
-use ObscureCoder\Exceptions\RouterException;
+use ObscureCode\Exceptions\RouterException;
 
 abstract class Router
 {
-    private string $file;
-    private array $data = [];
     private array $config;
+    private array $data = [];
     private string $path = '';
     private string $root;
+    private array $params = [];
 
     public function __construct(
         string $root,
-        string $route,
         array $config,
+        private string $defaultFile = 'index',
+        private string $defaultErrorPattern = 'error',
     ) {
+        if (!str_ends_with($root, '/')) {
+            $root .= '/';
+        }
+
         $this->root = $root;
         $this->config = $config;
 
+        if (!method_exists($this, 'pattern' . ucfirst($defaultErrorPattern))) {
+            throw new RouterException('Pattern ' . $defaultErrorPattern . ' should be created');
+        }
+    }
+
+    /**
+     * @param string $route
+     * @param array $data
+     */
+    public function call(
+        string $route,
+        array $data = [],
+    ): void {
+        $this->addData($data);
         $this->buildPath(
             $this->processRoute($route)
         );
         $this->callPattern();
+    }
+
+    private function addData(array $data): void
+    {
+        $this->data = array_merge($this->data, $data);
     }
 
     /**
@@ -37,32 +61,31 @@ abstract class Router
     {
         $route = trim($route);
         $route = trim($route, "/");
+
         return explode("/", strtolower($route));
     }
 
     /**
-     * @param $route
+     * @param array $route
      */
-    private function buildPath($route): void
+    private function buildPath(array $route): void
     {
         if (
             isset($route[0]) &&
-            is_dir($this->root . "include/" . $route[0])
+            is_dir($this->root . $route[0])
         ) {
             $directory = $route[0];
             $this->path .= $directory . "/";
             array_shift($route);
         }
 
-        if (isset($route[0])) {
-            $this->file = $route[0];
-        }
+        $file = $route[0] ?? $this->defaultFile;
 
-        $this->path .= $this->file;
+        $this->path .= $file;
         array_shift($route);
 
         foreach ($route as $value) {
-            $this->data['args'] = $value;
+            $this->params[] = $value;
         }
     }
 
@@ -75,18 +98,16 @@ abstract class Router
             throw new RouterException('Pattern missed for ' . $this->path);
         }
 
-        if (array_key_exists($this->path, $this->config)) {
-            $pattern = 'pattern_' . $this->config[$this->path]['pattern'];
-        } else {
-            $pattern = 'pattern_error';
-        }
+        $pattern = array_key_exists($this->path, $this->config) ?
+            'pattern' . ucfirst($this->config[$this->path]['pattern']) :
+            'pattern' . ucfirst($this->defaultErrorPattern);
 
         if (!method_exists($this, $pattern)) {
             throw new RouterException('Pattern ' . $pattern . ' not created');
         }
 
-        if (isset($this->routes[$this->path]['data'])) {
-            $this->data = $this->routes[$this->path]['data'];
+        if (isset($this->config[$this->path]['data'])) {
+            $this->addData($this->config[$this->path]['data']);
         }
 
         $this->$pattern($this->path);
@@ -100,18 +121,20 @@ abstract class Router
      */
     public function load(string $name, array $data = []): void
     {
-        $path = $this->root . "/include/{$name}.php";
+        $path = $this->root . "{$name}.php";
 
         if (!file_exists($path)) {
-            throw new RouterException('File '.$name.'.php does not exists');
+            throw new RouterException('File ' . $this->root . $name . '.php does not exists');
         }
 
-        if (isset($data['args'])) {
-            throw new RouterException('Given data cannot contains "args" key');
-        }
+        $this->addData($data);
 
-        $data = array_merge($this->data, $data);
+        // phpcs:ignore
+        $data = $this->data;
 
-        include($path);
+        // phpcs:ignore
+        $params = $this->params;
+
+        include $path;
     }
 }
