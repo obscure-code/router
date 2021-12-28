@@ -8,28 +8,17 @@ use ObscureCode\Exceptions\RouterException;
 
 abstract class Router
 {
-    private array $config;
     private array $data = [];
-    private string $path = '';
-    private string $root;
+    private array $path = [];
     private array $params = [];
+    private array $route = [];
 
     public function __construct(
-        string $root,
-        array $config,
-        private string $defaultFile = 'index',
+        private string $root,
+        private array $config,
+        private string $defaultScript = 'index',
         private string $defaultErrorPattern = 'error',
     ) {
-        if (!str_ends_with($root, '/')) {
-            $root .= '/';
-        }
-
-        $this->root = $root;
-        $this->config = $config;
-
-        if (!method_exists($this, 'pattern' . ucfirst($defaultErrorPattern))) {
-            throw new RouterException('Pattern ' . $defaultErrorPattern . ' should be created');
-        }
     }
 
     /**
@@ -41,12 +30,15 @@ abstract class Router
         array $data = [],
     ): void {
         $this->addData($data);
-        $this->buildPath(
-            $this->processRoute($route)
-        );
-        $this->callPattern();
+
+        $this->route = $this->setRoute($route);
+        $pattern = $this->getPattern();
+        $this->callPattern($pattern);
     }
 
+    /**
+     * @param array $data
+     */
     private function addData(array $data): void
     {
         $this->data = array_merge($this->data, $data);
@@ -55,9 +47,9 @@ abstract class Router
     /**
      * @param string $route
      *
-     * @return array
+     * @return list<string>
      */
-    private function processRoute(string $route): array
+    private function setRoute(string $route): array
     {
         $route = trim($route);
         $route = trim($route, "/");
@@ -66,65 +58,60 @@ abstract class Router
     }
 
     /**
-     * @param array $route
+     * @return string
      */
-    private function buildPath(array $route): void
+    private function getPattern(): string
     {
+        $route = empty($this->route) ? [$this->defaultScript] : $this->route;
+        $section = $this->config;
+
+        while (isset($route[0], $section[$route[0]])) {
+            $section = $section[$route[0]];
+            $this->path[] = array_shift($route);
+        }
+
         if (
-            isset($route[0]) &&
-            is_dir($this->root . $route[0])
+            isset($section[$this->defaultScript]) &&
+            !empty($this->path)
         ) {
-            $directory = $route[0];
-            $this->path .= $directory . "/";
-            array_shift($route);
+            $section = $section[$this->defaultScript];
+            $this->path[] = $this->defaultScript;
         }
 
-        $file = $route[0] ?? $this->defaultFile;
+        if (
+            isset($section['pattern']) &&
+            is_string($section['pattern'])
+        ) {
+            $this->params = $route;
 
-        $this->path .= $file;
-        array_shift($route);
-
-        foreach ($route as $value) {
-            $this->params[] = $value;
+            return $section['pattern'];
         }
+
+        return $this->defaultErrorPattern;
     }
 
     /**
-     * @throws RouterException
+     * @param string $pattern
      */
-    private function callPattern(): void
+    private function callPattern(string $pattern): void
     {
-        if (!isset($this->config[$this->path]['pattern'])) {
-            throw new RouterException('Pattern missed for ' . $this->path);
-        }
+        $patternMethod = 'pattern' . ucfirst($pattern);
 
-        $pattern = array_key_exists($this->path, $this->config) ?
-            'pattern' . ucfirst($this->config[$this->path]['pattern']) :
-            'pattern' . ucfirst($this->defaultErrorPattern);
+        $path = implode(DIRECTORY_SEPARATOR, $this->path);
 
-        if (!method_exists($this, $pattern)) {
-            throw new RouterException('Pattern ' . $pattern . ' not created');
-        }
-
-        if (isset($this->config[$this->path]['data'])) {
-            $this->addData($this->config[$this->path]['data']);
-        }
-
-        $this->$pattern($this->path);
+        $this->$patternMethod($path);
     }
 
     /**
-     * @param string $name
+     * @param string $path
      * @param array $data
-     *
-     * @throws RouterException
      */
-    public function load(string $name, array $data = []): void
+    public function load(string $path, array $data = []): void
     {
-        $path = $this->root . "{$name}.php";
+        $fullPath = $this->root . DIRECTORY_SEPARATOR . "$path.php";
 
-        if (!file_exists($path)) {
-            throw new RouterException('File ' . $this->root . $name . '.php does not exists');
+        if (!file_exists($fullPath)) {
+            throw new RouterException('Script ' . $fullPath . '.php does not exists');
         }
 
         $this->addData($data);
@@ -135,6 +122,6 @@ abstract class Router
         // phpcs:ignore
         $params = $this->params;
 
-        include $path;
+        include $fullPath;
     }
 }

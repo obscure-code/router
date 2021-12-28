@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ObscureCode\Tests;
 
-use ObscureCode\Exceptions\RouterException;
 use ObscureCode\Router;
 use PHPUnit\Framework\TestCase;
 
@@ -27,11 +26,13 @@ final class TestRouter extends TestCase
             "params" => [
                 "pattern" => "params",
             ],
-            "directory/index" => [
-                "pattern" => "default",
-            ],
-            "error" => [
-                "pattern" => "error",
+            "directory" => [
+                "index" => [
+                    "pattern" => "default",
+                ],
+                "non-existent-script" => [
+                    "pattern" => "default",
+                ],
             ],
         ];
 
@@ -87,7 +88,7 @@ final class TestRouter extends TestCase
     public function testRouterWithDirectoryRoute(): void
     {
         $this->testRouter->call(
-            '/directory',
+            '/directory/',
         );
 
         $expectedOutput = PHP_EOL . 'This is header.php!' . PHP_EOL;
@@ -99,11 +100,14 @@ final class TestRouter extends TestCase
 
     public function testRouterWithMissedPattern(): void
     {
-        $this->expectException(RouterException::class);
-        $this->expectExceptionMessage('Pattern missed for non-existent-pattern');
+        $expectedOutput = PHP_EOL . 'This is header.php!' . PHP_EOL;
+        $expectedOutput .= 'This is error.php!' . PHP_EOL;
+        $expectedOutput .= 'This is footer.php!' . PHP_EOL;
+
+        $this->expectOutputString($expectedOutput);
 
         $this->testRouter->call(
-            '/non-existent-pattern',
+            '/non-existent-route',
         );
     }
 
