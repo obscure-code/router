@@ -6,6 +6,6 @@ namespace ObscureCode\Exceptions;
 
 use RuntimeException;
 
-class RouterException extends RuntimeException
+class RouterRuntimeException extends RuntimeException
 {
 }

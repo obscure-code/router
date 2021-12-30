@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ObscureCode;
 
-use ObscureCode\Exceptions\RouterException;
+use ObscureCode\Exceptions\RouterRuntimeException;
 
 abstract class Router
 {
@@ -108,10 +108,10 @@ abstract class Router
      */
     public function load(string $path, array $data = []): void
     {
-        $fullPath = $this->root . DIRECTORY_SEPARATOR . "$path.php";
+        $fullPath = $this->root . DIRECTORY_SEPARATOR . $path . '.php';
 
         if (!file_exists($fullPath)) {
-            throw new RouterException('Script ' . $fullPath . '.php does not exists');
+            throw new RouterRuntimeException('Script ' . $fullPath . ' does not exists');
         }
 
         $this->addData($data);
