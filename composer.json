@@ -3,7 +3,7 @@
     "description": "PHP router",
     "type": "library",
     "license": "proprietary",
-    "minimum-stability": "beta",
+    "minimum-stability": "stable",
     "require": {
         "php": "^8.0"
     },
