@@ -12,6 +12,7 @@ abstract class Router
     private array $path = [];
     private array $params = [];
     private array $route = [];
+    private string $pattern;
 
     public function __construct(
         private string $root,
@@ -19,6 +20,7 @@ abstract class Router
         private string $defaultScript = 'index',
         private string $defaultErrorPattern = 'error',
     ) {
+        $this->pattern = $this->defaultErrorPattern;
     }
 
     /**
@@ -30,10 +32,9 @@ abstract class Router
         array $data = [],
     ): void {
         $this->addData($data);
-
-        $this->route = $this->setRoute($route);
-        $pattern = $this->getPattern();
-        $this->callPattern($pattern);
+        $this->setRoute($route);
+        $this->setPattern();
+        $this->callPattern();
     }
 
     /**
@@ -47,20 +48,19 @@ abstract class Router
     /**
      * @param string $route
      *
-     * @return list<string>
+     * @return void
      */
-    private function setRoute(string $route): array
+    private function setRoute(string $route): void
     {
         $route = trim($route);
         $route = trim($route, "/");
 
-        return explode("/", strtolower($route));
+        if ($route !== '') {
+            $this->route = explode("/", strtolower($route));
+        }
     }
 
-    /**
-     * @return string
-     */
-    private function getPattern(): string
+    private function setPattern(): void
     {
         $route = empty($this->route) ? [$this->defaultScript] : $this->route;
         $section = $this->config;
@@ -83,19 +83,13 @@ abstract class Router
             is_string($section['pattern'])
         ) {
             $this->params = $route;
-
-            return $section['pattern'];
+            $this->pattern = $section['pattern'];
         }
-
-        return $this->defaultErrorPattern;
     }
 
-    /**
-     * @param string $pattern
-     */
-    private function callPattern(string $pattern): void
+    private function callPattern(): void
     {
-        $patternMethod = 'pattern' . ucfirst($pattern);
+        $patternMethod = 'pattern' . ucfirst($this->pattern);
 
         $path = implode(DIRECTORY_SEPARATOR, $this->path);
 

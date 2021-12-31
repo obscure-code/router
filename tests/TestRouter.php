@@ -72,7 +72,20 @@ final class TestRouter extends TestCase
         };
     }
 
-    public function testRouterWithGoodData(): void
+    public function testRouterWithEmptyRoute(): void
+    {
+        $this->testRouter->call(
+            '',
+        );
+
+        $expectedOutput = PHP_EOL . 'This is header.php!' . PHP_EOL;
+        $expectedOutput .= 'This is index.php!' . PHP_EOL;
+        $expectedOutput .= 'This is footer.php!' . PHP_EOL;
+
+        $this->expectOutputString($expectedOutput);
+    }
+
+    public function testRouterWithGoodRoute(): void
     {
         $this->testRouter->call(
             '/index',
