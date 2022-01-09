@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace ObscureCode\Tests;
 
+use ObscureCode\Exceptions\NonExistentPatternException;
+use ObscureCode\Exceptions\NonExistentScriptException;
+use ObscureCode\Exceptions\NotFoundException;
 use ObscureCode\Router;
 use PHPUnit\Framework\TestCase;
 
@@ -28,6 +31,12 @@ final class TestRouter extends TestCase
             ],
             "params" => [
                 "pattern" => "params",
+            ],
+            "bad_pattern" => [
+                "pattern" => "non_existent_pattern",
+            ],
+            "bad_script" => [
+                "pattern" => "default",
             ],
             "directory" => [
                 "index" => [
@@ -114,16 +123,39 @@ final class TestRouter extends TestCase
         $this->expectOutputString($expectedOutput);
     }
 
-    public function testRouterWithMissedPattern(): void
+    public function testRouterWithNonExistentRoute(): void
     {
-        $expectedOutput = PHP_EOL . 'This is header.php!' . PHP_EOL;
-        $expectedOutput .= 'This is error.php!' . PHP_EOL;
-        $expectedOutput .= 'This is footer.php!' . PHP_EOL;
-
-        $this->expectOutputString($expectedOutput);
+        $this->expectException(NotFoundException::class);
 
         $this->testRouter->call(
-            '/non-existent-route',
+            '/non_existent_route',
+        );
+    }
+
+    public function testRouterNotFoundExceptionThrown(): void
+    {
+        $this->expectException(NotFoundException::class);
+
+        $this->testRouter->call(
+            '/not_found',
+        );
+    }
+
+    public function testRouterWithNonExistentPattern(): void
+    {
+        $this->expectException(NonExistentPatternException::class);
+
+        $this->testRouter->call(
+            '/bad_pattern',
+        );
+    }
+
+    public function testRouterWithNonExistentScript(): void
+    {
+        $this->expectException(NonExistentScriptException::class);
+
+        $this->testRouter->call(
+            '/bad_script',
         );
     }
 
@@ -158,18 +190,5 @@ final class TestRouter extends TestCase
             var_export(['a', 'b', 'c'], true),
             $output,
         );
-    }
-
-    public function testRouterNotFoundException(): void
-    {
-        $this->testRouter->call(
-            'not_found',
-        );
-
-        $expectedOutput = PHP_EOL . 'This is header.php!' . PHP_EOL;
-        $expectedOutput .= 'Page not found' . PHP_EOL;
-        $expectedOutput .= 'This is footer.php!' . PHP_EOL;
-
-        $this->expectOutputString($expectedOutput);
     }
 }

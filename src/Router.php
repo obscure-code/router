@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace ObscureCode;
 
+use ObscureCode\Exceptions\NonExistentPatternException;
+use ObscureCode\Exceptions\NonExistentScriptException;
 use ObscureCode\Exceptions\NotFoundException;
-use ObscureCode\Exceptions\RouterRuntimeException;
 
 abstract class Router
 {
@@ -13,15 +14,13 @@ abstract class Router
     private array $path = [];
     private array $params = [];
     private array $route = [];
-    private string $pattern;
+    private ?string $pattern = null;
 
     public function __construct(
         private string $root,
         private array $config,
         private string $defaultScript = 'index',
-        private string $notFoundPattern = 'error',
     ) {
-        $this->pattern = $this->notFoundPattern;
     }
 
     /**
@@ -90,24 +89,19 @@ abstract class Router
 
     private function callPattern(): void
     {
+        if ($this->pattern === null) {
+            throw new NotFoundException();
+        }
+
         $patternMethod = 'pattern' . ucfirst($this->pattern);
+
+        if (!method_exists($this, $patternMethod)) {
+            throw new NonExistentPatternException("Method $patternMethod does not exist");
+        }
 
         $path = implode(DIRECTORY_SEPARATOR, $this->path);
 
-        try {
-            ob_start();
-            $this->$patternMethod($path);
-        } catch (NotFoundException $exception) {
-            ob_clean();
-            $patternMethod = 'pattern' . ucfirst($this->notFoundPattern);
-            $this->addData([
-                'message' => $exception->getMessage(),
-            ]);
-            http_response_code(404);
-            $this->$patternMethod($path);
-        } finally {
-            ob_end_flush();
-        }
+        $this->$patternMethod($path);
     }
 
     /**
@@ -119,7 +113,7 @@ abstract class Router
         $fullPath = $this->root . DIRECTORY_SEPARATOR . $path . '.php';
 
         if (!file_exists($fullPath)) {
-            throw new RouterRuntimeException('Script ' . $fullPath . ' does not exists');
+            throw new NonExistentScriptException('Script ' . $fullPath . ' does not exists');
         }
 
         $this->addData($data);
