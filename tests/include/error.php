@@ -1,5 +1,9 @@
 <?php
 
+/** @psalm-var array $data*/
+
 declare(strict_types=1);
 
-echo 'This is error.php!' . PHP_EOL;
+$message = $data['message'] ?? 'This is error.php!';
+
+echo $message . PHP_EOL;

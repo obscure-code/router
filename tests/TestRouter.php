@@ -20,6 +20,9 @@ final class TestRouter extends TestCase
             "index" => [
                 "pattern" => "default",
             ],
+            "not_found" => [
+                "pattern" => "default",
+            ],
             "data" => [
                 "pattern" => "data",
             ],
@@ -155,5 +158,18 @@ final class TestRouter extends TestCase
             var_export(['a', 'b', 'c'], true),
             $output,
         );
+    }
+
+    public function testRouterNotFoundException(): void
+    {
+        $this->testRouter->call(
+            'not_found',
+        );
+
+        $expectedOutput = PHP_EOL . 'This is header.php!' . PHP_EOL;
+        $expectedOutput .= 'Page not found' . PHP_EOL;
+        $expectedOutput .= 'This is footer.php!' . PHP_EOL;
+
+        $this->expectOutputString($expectedOutput);
     }
 }

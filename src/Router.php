@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ObscureCode;
 
+use ObscureCode\Exceptions\NotFoundException;
 use ObscureCode\Exceptions\RouterRuntimeException;
 
 abstract class Router
@@ -18,9 +19,9 @@ abstract class Router
         private string $root,
         private array $config,
         private string $defaultScript = 'index',
-        private string $defaultErrorPattern = 'error',
+        private string $notFoundPattern = 'error',
     ) {
-        $this->pattern = $this->defaultErrorPattern;
+        $this->pattern = $this->notFoundPattern;
     }
 
     /**
@@ -93,7 +94,20 @@ abstract class Router
 
         $path = implode(DIRECTORY_SEPARATOR, $this->path);
 
-        $this->$patternMethod($path);
+        try {
+            ob_start();
+            $this->$patternMethod($path);
+        } catch (NotFoundException $exception) {
+            ob_clean();
+            $patternMethod = 'pattern' . ucfirst($this->notFoundPattern);
+            $this->addData([
+                'message' => $exception->getMessage(),
+            ]);
+            http_response_code(404);
+            $this->$patternMethod($path);
+        } finally {
+            ob_end_flush();
+        }
     }
 
     /**
