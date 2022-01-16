@@ -49,7 +49,7 @@ final class TestRouter extends TestCase
         ];
 
         $this->testRouter = new class (
-            __DIR__ . '/include',
+            __DIR__ . DIRECTORY_SEPARATOR . 'include',
             $config,
         ) extends Router {
             public function patternDefault(string $path): void
@@ -132,7 +132,7 @@ final class TestRouter extends TestCase
         );
     }
 
-    public function testRouterNotFoundExceptionThrown(): void
+    public function testRouterWithNotFoundExceptionThrown(): void
     {
         $this->expectException(NotFoundException::class);
 

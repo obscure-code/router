@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace ObscureCode\Exceptions;
 
-class NotFoundException extends RouterRuntimeException
+use RuntimeException;
+
+class NotFoundException extends RuntimeException
 {
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace ObscureCode\Exceptions;
 
-class NonExistentPatternException extends RouterRuntimeException
+use LogicException;
+
+class NonExistentPatternException extends LogicException
 {
 }
