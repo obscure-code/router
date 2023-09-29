@@ -123,3 +123,17 @@ try {
 If route exist in config, but pattern or file not exists, `LogicException` will be thrown.
 
 You can see an example of a boilerplate application [**here**](https://github.com/obscure-code/boilerplate).
+
+# Local development
+
+```
+docker build --tag router .
+docker run --detach -v "$(pwd):/app" --name=router router
+docker exec -it router /bin/bash
+
+composer install
+composer tests
+composer cs
+composer stan
+composer psalm
+```

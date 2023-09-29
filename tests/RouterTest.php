@@ -10,10 +10,7 @@ use ObscureCode\Exceptions\NotFoundException;
 use ObscureCode\Router;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @psalm-suppress PropertyNotSetInConstructor
- */
-final class TestRouter extends TestCase
+class RouterTest extends TestCase
 {
     private Router $testRouter;
 
